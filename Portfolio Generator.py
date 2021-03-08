@@ -1,0 +1,4 @@
+
+
+file = open('stockdata.xls')
+
