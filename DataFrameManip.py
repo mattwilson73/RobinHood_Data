@@ -18,12 +18,13 @@ class Stock:
         self.df = None
         self.closedf = None
         self.movavg = None
+        self.dpc = None
         self.start = dt.datetime.now() - dt.timedelta(days=1825)
         self.end = dt.date.today()
 
-        self.grabdata()
+        self.grab_data()
 
-    def grabdata(self):
+    def grab_data(self):
         self.df = web.DataReader(self.ticker, 'yahoo', self.start, self.end)
         self.closedf = self.df['Adj Close']
         # self.closedf.rename(columns={'Adj Close':str(self.ticker)},inplace=True)
@@ -36,8 +37,14 @@ class Stock:
     def getdata(self):
         return self.closedf
 
+    def gendpc(self):
+        self.dpc = np.log(1+self.closedf.pct_change())
+
     def getdpc(self):
-        return np.log(1+self.closedf.pct_change())
+        return self.dpc
+
+    def genCumulRet(self):
+        pass
 
     def plotdf(self):
         mpl.rc('figure',figsize=(8,7))
@@ -49,16 +56,17 @@ class Stock:
 
 
 class Portfolio:
-    def __init__(self, holdings = []):
+    def __init__(self, holdings = None):
         self.holdings = holdings
         self.portfolio = []
         self.returns = []
+        self.weights = []
         self.dpc = None
         self.genPortfolio()
         self.genDPC()
 
     def genPortfolio(self):
-        for t in self.holdings:
+        for t in self.holdings['Ticker'].tolist():
             self.portfolio.append(Stock(t))
 
     def genDPC(self):
@@ -69,23 +77,48 @@ class Portfolio:
 
         self.dpc = pd.concat(dpcdata, axis='columns' ,join='inner')
 
+        print(self.dpc)
+
     def genReturns(self):
-        # for s in self.portfolio:
-        #     self.returns =
         pass
 
 
+    def getHoldings(self):
+        '''Returns a list of holdings'''
+        return self.holdings['Ticker'].tolist()
+
     def plotDPC(self):
-        self.dpc.plot(figsize=(20,10), title='Daily Returns')
-        plt.legend(self.holdings)
+        self.dpc.plot(figsize=(15,10), title='Daily Returns')
+        plt.legend(self.holdings['Ticker'].tolist())
         plt.show()
 
 
 
-testHoldings = ['AAPL','AMZN','FB','GE']
-
-myport = Portfolio(testHoldings)
-
-myport.plotDPC()
 
 
+def holdingsimporter():
+    df = pd.read_excel('stockdata.xls', sheet_name='Summary',usecols="A,G")
+    df = df[df['Quantity in hand'] > 0]
+
+
+
+    return df
+
+
+myholdings = holdingsimporter()
+
+myport = Portfolio(myholdings)
+
+print(type(myport[0].getdpc()))
+
+
+# myport.plotDPC()
+#
+# testHoldings = ['AAPL','AMZN','FB','GE']
+
+# testport = Portfolio(testHoldings)
+# testport.plotDPC()
+
+
+# print(x['Ticker'].tolist())
+# print(x['Quantity in hand'].to_list())
